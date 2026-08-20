@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Pro Neon Edition</title>
+    <style>
+        /* طراحی ظاهری خفن و مدرن */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0a0a0a; /* پس‌زمینه سیاه عمیق */
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #game-container {
+            text-align: center;
+            position: relative;
+        }
+
+        canvas {
+            border: 5px solid #00ffcc; /* لبه‌های نئونی */
+            box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #00ffcc;
+            background-color: #111;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+            color: #00ffcc;
+        }
+
+        .score-board {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #ff0077;
+            text-shadow: 0 0 5px #ff0077;
+        }
+
+        .controls {
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>SNAKE PRO</h1>
+        <div class="score-board">Score: <span id="score">0</span></div>
+        <canvas id="snakeGame" width="400" height="400"></canvas>
+        <div class="controls">استفاده از کلیدهای جهت‌نما (Arrow Keys) برای حرکت</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("snakeGame");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+
+        const box = 20; // اندازه هر مربع
+        let score = 0;
+        let gameSpeed = 100;
+
+        // ساختار مار
+        let snake = [];
+        snake[0] = { x: 9 * box, y: 10 * box };
+
+        // ساختار غذا
+        let food = {
+            x: Math.floor(Math.random() * 19 + 1) * box,
+            y: Math.floor(Math.random() * 19 + 1) * box
+        };
+
+        let d; // جهت حرکت
+
+        // کنترل با کیبورد
+        document.addEventListener("keydown", direction);
+
+        function direction(event) {
+            let key = event.keyCode;
+            if(key == 37 && d != "RIGHT") d = "LEFT";
+            else if(key == 38 && d != "DOWN") d = "UP";
+            else if(key == 39 && d != "LEFT") d = "RIGHT";
+            else if(key == 40 && d != "UP") d = "DOWN";
+        }
+
+        // تابع بررسی برخورد با خود مار
+        function collision(head, array) {
+            for(let i = 0; i < array.length; i++) {
+                if(head.x == array[i].x && head.y == array[i].y) return true;
+            }
+            return false;
+        }
+
+        // تابع اصلی رسم بازی
+        function draw() {
+            // پاک کردن صفحه در هر فریم
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // رسم مار
+            for(let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i == 0) ? "#00ffcc" : "#008866"; // سر مار روشن‌تر است
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#00ffcc";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                
+                // اضافه کردن کادر کوچک دور قطعات مار
+                ctx.strokeStyle = "#111";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+                ctx.shadowBlur = 0; // ریست کردن سایه برای بقیه اجزا
+            }
+
+            // رسم غذا
+            ctx.fillStyle = "#ff0077";
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#ff0077";
+            ctx.beginPath();
+            ctx.arc(food.x + box/2, food.y + box/2, box/2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // موقعیت سر فعلی
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            // حرکت مار بر اساس جهت
+            if( d == "LEFT") snakeX -= box;
+            if( d == "UP") snakeY -= box;
+            if( d == "RIGHT") snakeX += box;
+            if( d == "DOWN") snakeY += box;
+
+            // اگر مار غذا خورد
+            if(snakeX == food.x && snakeY == food.y) {
+                score++;
+                scoreElement.innerHTML = score;
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
+                };
+                // سرعت بازی با خوردن غذا کمی بیشتر می‌شود (سخت‌تر می‌شود)
+                if (gameSpeed > 50) clearInterval(game); 
+            } else {
+                // حذف دم مار
+                snake.pop();
+            }
+
+            // سر جدید مار
+            let newHead = { x: snakeX, y: snakeY };
+
+            // قوانین باخت (برخورد به دیوار یا خود مار)
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                alert("GAME OVER! \nامتیاز شما: " + score + "\nبرای دوباره بازی کردن صفحه را رفرش کنید.");
+                location.reload();
+            }
+
+            snake.unshift(newHead);
+        }
+
+        // شروع چرخه بازی
+        let game = setInterval(draw, gameSpeed);
+
+    </script>
+</body>
+</html>
