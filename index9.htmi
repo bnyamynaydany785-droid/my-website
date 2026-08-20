@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت بنیامین</title>
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h2 { color: #1a73e8; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background-color: #1557b0; }
+        #welcome-screen { display: none; }
+        .error { color: red; font-size: 14px; margin-bottom: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- صفحه ورود -->
+    <div id="login-screen" class="container">
+        <h2>ورود به پنل</h2>
+        <p id="error-msg" class="error">ایمیل یا رمز عبور اشتباه است!</p>
+        <input type="email" id="email" placeholder="ایمیل">
+        <input type="password" id="password" placeholder="رمز عبور">
+        <button onclick="login()">ورود</button>
+    </div>
+
+    <!-- صفحه خوش آمدید -->
+    <div id="welcome-screen" class="container">
+        <h1 style="color: #28a745;">🎉</h1>
+        <h2>به پنل بنیامین خوش آمدید!</h2>
+        <button onclick="location.reload()" style="background-color: #6c757d;">خروج</button>
+    </div>
+
+    <script>
+        function login() {
+            const emailInput = document.getElementById('email').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            // اطلاعات صحیح
+            const correctEmail = "bnyamynaydany785@gmail.com";
+            const correctPassword = "RkYCtrb0";
+
+            if (emailInput === correctEmail && passwordInput === correctPassword) {
+                // ورود موفق
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('welcome-screen').style.display = 'block';
+                errorMsg.style.display = 'none';
+            } else {
+                // ورود ناموفق
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // اجازه دادن به زدن Enter برای ورود
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+
+</body>
+</html>
