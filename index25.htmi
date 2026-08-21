@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DART ARENA 3D</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    overflow:hidden;
+    background:#050609;
+    font-family:Arial,sans-serif;
+    color:white;
+    user-select:none;
+}
+#game{
+    position:fixed;
+    inset:0;
+}
+canvas{display:block}
+
+#hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+}
+
+.top{
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    padding:12px 30px;
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:18px;
+    background:rgba(5,8,15,.72);
+    backdrop-filter:blur(15px);
+    box-shadow:0 0 35px rgba(0,0,0,.5);
+}
+.title{
+    font-size:13px;
+    letter-spacing:6px;
+    color:#aaa;
+}
+.score{
+    font-size:48px;
+    font-weight:900;
+    margin-top:2px;
+}
+.turn{
+    font-size:12px;
+    color:#aaa;
+}
+
+.panel{
+    position:absolute;
+    left:25px;
+    top:25px;
+    width:190px;
+    padding:18px;
+    border-radius:18px;
+    background:rgba(8,10,16,.75);
+    border:1px solid rgba(255,255,255,.13);
+    backdrop-filter:blur(15px);
+}
+.panel h3{
+    font-size:12px;
+    color:#999;
+    letter-spacing:2px;
+    margin-bottom:12px;
+}
+.stat{
+    display:flex;
+    justify-content:space-between;
+    margin:8px 0;
+    font-size:14px;
+}
+.stat b{font-size:17px}
+
+.power{
+    position:absolute;
+    right:28px;
+    bottom:35px;
+    width:210px;
+}
+.powerText{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    margin-bottom:7px;
+}
+.bar{
+    height:13px;
+    border-radius:20px;
+    background:#161922;
+    border:1px solid #333;
+    overflow:hidden;
+}
+.fill{
+    height:100%;
+    width:55%;
+    background:linear-gradient(90deg,#22d3ee,#7c3aed,#ff2d55);
+    box-shadow:0 0 15px #7c3aed;
+}
+
+.help{
+    position:absolute;
+    bottom:25px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:10px 18px;
+    background:rgba(0,0,0,.65);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:15px;
+    color:#bbb;
+    font-size:12px;
+}
+
+#start{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at center,rgba(90,30,130,.25),transparent 45%),
+      #030409;
+    z-index:10;
+}
+.startBox{
+    text-align:center;
+    padding:50px;
+    width:min(600px,90%);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:30px;
+    background:rgba(10,12,20,.8);
+    backdrop-filter:blur(20px);
+    box-shadow:0 0 100px rgba(100,30,180,.2);
+}
+.logo{
+    font-size:64px;
+    font-weight:1000;
+    letter-spacing:8px;
+    background:linear-gradient(90deg,#fff,#b06cff,#55eaff);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+.sub{
+    margin:15px 0 35px;
+    color:#999;
+    letter-spacing:4px;
+}
+button{
+    pointer-events:auto;
+    border:0;
+    padding:16px 45px;
+    border-radius:15px;
+    background:linear-gradient(90deg,#7c3aed,#2563eb);
+    color:white;
+    font-weight:bold;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow:0 0 35px rgba(80,60,255,.4);
+    transition:.2s;
+}
+button:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 50px rgba(100,70,255,.7);
+}
+
+#message{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%) scale(.8);
+    font-size:70px;
+    font-weight:1000;
+    opacity:0;
+    transition:.25s;
+    text-shadow:0 0 30px currentColor;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="start">
+    <div class="startBox">
+        <div class="logo">DART</div>
+        <div class="sub">ULTIMATE 3D ARENA</div>
+        <button id="startBtn">START MATCH</button>
+    </div>
+</div>
+
+<div id="hud">
+
+    <div class="panel">
+        <h3>PLAYER</h3>
+        <div class="stat">
+            <span>Score</span>
+            <b id="score">501</b>
+        </div>
+        <div class="stat">
+            <span>Round</span>
+            <b id="round">1</b>
+        </div>
+        <div class="stat">
+            <span>Darts</span>
+            <b id="darts">3</b>
+        </div>
+        <div class="stat">
+            <span>Last</span>
+            <b id="last">—</b>
+        </div>
+    </div>
+
+    <div class="top">
+        <div class="title">DART ARENA</div>
+        <div class="score" id="bigScore">501</div>
+        <div class="turn">YOUR TURN</div>
+    </div>
+
+    <div class="power">
+        <div class="powerText">
+            <span>THROW POWER</span>
+            <span id="powerNum">55%</span>
+        </div>
+        <div class="bar">
+            <div class="fill" id="powerFill"></div>
+        </div>
+    </div>
+
+    <div class="help">
+        حرکت موس = نشانه‌گیری &nbsp; | &nbsp; کلیک = پرتاب &nbsp; | &nbsp; Space = پرتاب
+    </div>
+
+    <div id="message"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+/* =========================================================
+   DART ARENA 3D
+   ========================================================= */
+
+let scene,camera,renderer;
+let board,aim,dartGroup;
+let darts=[];
+let score=501;
+let round=1;
+let dartsLeft=3;
+let power=.55;
+let mouseX=0,mouseY=0;
+let gameStarted=false;
+let canThrow=false;
+let raycaster=new THREE.Raycaster();
+let mouse=new THREE.Vector2();
+
+const scoreEl=document.getElementById("score");
+const bigScore=document.getElementById("bigScore");
+const dartsEl=document.getElementById("darts");
+const roundEl=document.getElementById("round");
+const lastEl=document.getElementById("last");
+const powerFill=document.getElementById("powerFill");
+const powerNum=document.getElementById("powerNum");
+const message=document.getElementById("message");
+
+init();
+
+function init(){
+
+    scene=new THREE.Scene();
+
+    scene.background=new THREE.Color(0x030407);
+
+    scene.fog=new THREE.FogExp2(0x05070b,.025);
+
+    camera=new THREE.PerspectiveCamera(
+        58,
+        innerWidth/innerHeight,
+        .1,
+        100
+    );
+
+    camera.position.set(0,2.2,9);
+    camera.lookAt(0,2.2,0);
+
+    renderer=new THREE.WebGLRenderer({
+        antialias:true,
+        powerPreference:"high-performance"
+    });
+
+    renderer.setSize(innerWidth,innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+    renderer.outputEncoding=THREE.sRGBEncoding;
+
+    document.getElementById("game").appendChild(renderer.domElement);
+
+    createLights();
+    createRoom();
+    createBoard();
+    createAim();
+    createDartRack();
+
+    window.addEventListener("resize",resize);
+    window.addEventListener("mousemove",mouseMove);
+    window.addEventListener("mousedown",e=>{
+        if(gameStarted && canThrow && e.button===0)
+            throwDart();
+    });
+
+    window.addEventListener("keydown",e=>{
+        if(e.code==="Space"){
+            e.preventDefault();
+            if(gameStarted && canThrow) throwDart();
+        }
+
+        if(e.code==="ArrowUp")
+            power=Math.min(1,power+.05);
+
+        if(e.code==="ArrowDown")
+            power=Math.max(.1,power-.05);
+
+        updatePower();
+    });
+
+    document.getElementById("startBtn").onclick=startGame;
+
+    animate();
+}
+
+
+/* =========================
+   LIGHTING
+========================= */
+
+function createLights(){
+
+    const ambient=new THREE.AmbientLight(0x8899bb,.8);
+    scene.add(ambient);
+
+    const main=new THREE.SpotLight(
+        0xffffff,
+        7,
+        30,
+        Math.PI/5,
+        .35
+    );
+
+    main.position.set(0,7,5);
+    main.target.position.set(0,2,0);
+
+    main.castShadow=true;
+    main.shadow.mapSize.set(2048,2048);
+
+    scene.add(main);
+    scene.add(main.target);
+
+    const purple=new THREE.PointLight(
+        0x7c3aed,
+        8,
+        15
+    );
+
+    purple.position.set(-5,3,1);
+    scene.add(purple);
+
+    const blue=new THREE.PointLight(
+        0x00c8ff,
+        6,
+        15
+    );
+
+    blue.position.set(5,3,0);
+    scene.add(blue);
+}
+
+
+/* =========================
+   ROOM
+========================= */
+
+function createRoom(){
+
+    // Floor
+    const floorMat=new THREE.MeshStandardMaterial({
+        color:0x10131a,
+        roughness:.55,
+        metalness:.25
+    });
+
+    const floor=new THREE.Mesh(
+        new THREE.PlaneGeometry(30,30),
+        floorMat
+    );
+
+    floor.rotation.x=-Math.PI/2;
+    floor.position.y=0;
+    floor.receiveShadow=true;
+
+    scene.add(floor);
+
+    // Back wall
+    const wallMat=new THREE.MeshStandardMaterial({
+        color:0x090b11,
+        roughness:.9
+    });
+
+    const wall=new THREE.Mesh(
+        new THREE.BoxGeometry(20,10,.4),
+        wallMat
+    );
+
+    wall.position.set(0,5,-2);
+    wall.receiveShadow=true;
+
+    scene.add(wall);
+
+    // Neon strips
+    for(let i=-5;i<=5;i+=2.5){
+
+        const mat=new THREE.MeshBasicMaterial({
+            color:i%5===0?0x7c3aed:0x00d9ff
+        });
+
+        const strip=new THREE.Mesh(
+            new THREE.BoxGeometry(.025,5,.03),
+            mat
+        );
+
+        strip.position.set(i,2.5,-1.75);
+
+        scene.add(strip);
+    }
+
+    // Throw line
+    const lineMat=new THREE.MeshBasicMaterial({
+        color:0xffffff
+    });
+
+    const line=new THREE.Mesh(
+        new THREE.BoxGeometry(2.2,.025,.05),
+        lineMat
+    );
+
+    line.position.set(0,.02,4);
+    scene.add(line);
+
+    // Ceiling
+    const ceiling=new THREE.Mesh(
+        new THREE.BoxGeometry(20,.3,20),
+        new THREE.MeshStandardMaterial({
+            color:0x050609
+        })
+    );
+
+    ceiling.position.y=8;
+    scene.add(ceiling);
+}
+
+
+/* =========================
+   DART BOARD
+========================= */
+
+function createBoard(){
+
+    board=new THREE.Group();
+
+    board.position.set(0,3,-1.35);
+
+    scene.add(board);
+
+    // Main board
+    const boardGeo=new THREE.CylinderGeometry(
+        2.05,2.05,.38,96
+    );
+
+    const boardMat=new THREE.MeshStandardMaterial({
+        color:0x161616,
+        roughness:.8
+    });
+
+    const base=new THREE.Mesh(boardGeo,boardMat);
+
+    base.rotation.z=Math.PI/2;
+    base.castShadow=true;
+    base.receiveShadow=true;
+
+    board.add(base);
+
+    // Rings
+    createRing(1.95,.07,0x222222);
+    createRing(1.70,.08,0x9a1d26);
+    createRing(1.08,.07,0xeeeeee);
+    createRing(.32,.08,0x9a1d26);
+    createRing(.15,.09,0xeeeeee);
+
+    // Number ring
+    createNumbers();
+
+    // Segments
+    const segmentMat=new THREE.LineBasicMaterial({
+        color:0x222222
+    });
+
+    for(let i=0;i<20;i++){
+
+        const a=i*Math.PI*2/20;
+
+        const points=[
+            new THREE.Vector3(
+                Math.cos(a)*.35,
+                Math.sin(a)*.35,
+                .21
+            ),
+            new THREE.Vector3(
+                Math.cos(a)*1.92,
+                Math.sin(a)*1.92,
+                .21
+            )
+        ];
+
+        const geo=new THREE.BufferGeometry()
+            .setFromPoints(points);
+
+        const line=new THREE.Line(
+            geo,
+            segmentMat
+        );
+
+        line.rotation.y=Math.PI/2;
+        board.add(line);
+    }
+
+    // Board texture-like colored sectors
+    const sectors=[
+        20,1,18,4,13,6,10,15,2,17,
+        3,19,7,16,8,11,14,9,12,5
+    ];
+
+    for(let i=0;i<20;i++){
+
+        const start=-Math.PI/2+i*Math.PI*2/20;
+        const end=start+Math.PI*2/20;
+
+        addSector(
+            1.0,
+            1.65,
+            start,
+            end,
+            i%2===0?0x111111:0x202020
+        );
+
+        addSector(
+            1.70,
+            1.93,
+            start,
+            end,
+            i%2===0?0x6e171d:0xb83238
+        );
+    }
+
+    // Bull center
+    const bull=new THREE.Mesh(
+        new THREE.CircleGeometry(.16,64),
+        new THREE.MeshStandardMaterial({
+            color:0xff3434,
+            emissive:0x330000
+        })
+    );
+
+    bull.rotation.y=Math.PI/2;
+    bull.position.x=.205;
+
+    board.add(bull);
+}
+
+function createRing(radius,tube,color){
+
+    const geo=new THREE.TorusGeometry(
+        radius,
+        tube,
+        12,
+        96
+    );
+
+    const mat=new THREE.MeshStandardMaterial({
+        color,
+        metalness:.3,
+        roughness:.4
+    });
+
+    const ring=new THREE.Mesh(geo,mat);
+
+    ring.rotation.y=Math.PI/2;
+    ring.position.x=.22;
+
+    board.add(ring);
+}
+
+function addSector(r1,r2,a1,a2,color){
+
+    const shape=new THREE.Shape();
+
+    shape.moveTo(
+        Math.cos(a1)*r1,
+        Math.sin(a1)*r1
+    );
+
+    const steps=8;
+
+    for(let i=0;i<=steps;i++){
+
+        const a=a1+(a2-a1)*i/steps;
+
+        shape.lineTo(
+            Math.cos(a)*r2,
+            Math.sin(a)*r2
+        );
+    }
+
+    for(let i=steps;i>=0;i--){
+
+        const a=a1+(a2-a1)*i/steps;
+
+        shape.lineTo(
+            Math.cos(a)*r1,
+            Math.sin(a)*r1
+        );
+    }
+
+    const geo=new THREE.ShapeGeometry(shape);
+
+    const mat=new THREE.MeshStandardMaterial({
+        color,
+        roughness:.85
+    });
+
+    const mesh=new THREE.Mesh(geo,mat);
+
+    mesh.rotation.y=Math.PI/2;
+    mesh.position.x=.215;
+
+    board.add(mesh);
+}
+
+function createNumbers(){
+
+    const nums=[
+        20,1,18,4,13,6,10,15,2,17,
+        3,19,7,16,8,11,14,9,12,5
+    ];
+
+    const canvas=document.createElement("canvas");
+    canvas.width=1024;
+    canvas.height=256;
+
+    const ctx=canvas.getContext("2d");
+
+    ctx.clearRect(0,0,1024,256);
+
+    ctx.font="bold 70px Arial";
+    ctx.fillStyle="#eee";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    nums.forEach((n,i)=>{
+
+        const x=(i+.5)/20*1024;
+
+        ctx.fillText(n,x,130);
+    });
+
+    const tex=new THREE.CanvasTexture(canvas);
+
+    const mat=new THREE.MeshBasicMaterial({
+        map:tex,
+        transparent:true
+    });
+
+    const plane=new THREE.Mesh(
+        new THREE.PlaneGeometry(3.7,.85),
+        mat
+    );
+
+    plane.rotation.y=Math.PI/2;
+    plane.position.x=.28;
+    plane.position.z=.01;
+    plane.position.y=0;
+
+    board.add(plane);
+}
+
+
+/* =========================
+   AIM
+========================= */
+
+function createAim(){
+
+    aim=new THREE.Group();
+
+    const outer=new THREE.Mesh(
+        new THREE.TorusGeometry(.12,.008,8,32),
+        new THREE.MeshBasicMaterial({
+            color:0x00eaff
+        })
+    );
+
+    outer.rotation.y=Math.PI/2;
+
+    const dot=new THREE.Mesh(
+        new THREE.SphereGeometry(.018,16,16),
+        new THREE.MeshBasicMaterial({
+            color:0xffffff
+        })
+    );
+
+    aim.add(outer,dot);
+
+    aim.position.set(0,3, -1.05);
+
+    scene.add(aim);
+}
+
+
+/* =========================
+   DART
+========================= */
+
+function makeDart(){
+
+    const g=new THREE.Group();
+
+    // Metal tip
+    const tip=new THREE.Mesh(
+        new THREE.ConeGeometry(.055,.55,16),
+        new THREE.MeshStandardMaterial({
+            color:0xaaaaaa,
+            metalness:.9,
+            roughness:.2
+        })
+    );
+
+    tip.rotation.z=-Math.PI/2;
+    tip.position.x=-.27;
+
+    g.add(tip);
+
+    // Barrel
+    const barrel=new THREE.Mesh(
+        new THREE.CylinderGeometry(.09,.1,.65,20),
+        new THREE.MeshStandardMaterial({
+            color:0x777777,
+            metalness:.95,
+            roughness:.18
+        })
+    );
+
+    barrel.rotation.z=-Math.PI/2;
+
+    g.add(barrel);
+
+    // Grip rings
+    for(let i=0;i<7;i++){
+
+        const ring=new THREE.Mesh(
+            new THREE.TorusGeometry(.095,.008,8,20),
+            new THREE.MeshStandardMaterial({
+                color:0xcccccc,
+                metalness:.9
+            })
+        );
+
+        ring.rotation.y=Math.PI/2;
+        ring.position.x=.05+i*.075;
+
+        g.add(ring);
+    }
+
+    // Shaft
+    const shaft=new THREE.Mesh(
+        new THREE.CylinderGeometry(.045,.045,.5,12),
+        new THREE.MeshStandardMaterial({
+            color:0x222222,
+            metalness:.5
+        })
+    );
+
+    shaft.rotation.z=-Math.PI/2;
+    shaft.position.x=.55;
+
+    g.add(shaft);
+
+    // Flights
+    const flightMat=new THREE.MeshStandardMaterial({
+        color:0x7c3aed,
+        emissive:0x16002d,
+        side:THREE.DoubleSide
+    });
+
+    const f1=new THREE.Mesh(
+        new THREE.BoxGeometry(.32,.025,.38),
+        flightMat
+    );
+
+    f1.position.x=.78;
+
+    const f2=new THREE.Mesh(
+        new THREE.BoxGeometry(.32,.38,.025),
+        flightMat
+    );
+
+    f2.position.x=.78;
+
+    g.add(f1,f2);
+
+    g.scale.set(.75,.75,.75);
+
+    return g;
+}
+
+
+/* =========================
+   THROW
+========================= */
+
+function throwDart(){
+
+    if(!canThrow)return;
+
+    canThrow=false;
+
+    const dart=makeDart();
+
+    dart.position.copy(camera.position);
+
+    scene.add(dart);
+
+    darts.push(dart);
+
+    const target=new THREE.Vector3(
+        aim.position.x,
+        aim.position.y,
+        -1.55
+    );
+
+    const start=dart.position.clone();
+
+    const direction=new THREE.Vector3()
+        .subVectors(target,start)
+        .normalize();
+
+    const distance=start.distanceTo(target);
+
+    let progress=0;
+
+    dart.rotation.y=Math.PI/2;
+
+    function fly(){
+
+        progress+=.045+.07*power;
+
+        const t=Math.min(progress,1);
+
+        const p=start.clone().lerp(target,t);
+
+        // realistic arc
+        p.y += Math.sin(t*Math.PI)*(.25+power*.45);
+
+        dart.position.copy(p);
+
+        dart.lookAt(target);
+
+        dart.rotateZ(Math.PI/2);
+
+        if(t<1){
+
+            requestAnimationFrame(fly);
+
+        }else{
+
+            registerHit(target);
+        }
+    }
+
+    fly();
+}
+
+
+/* =========================
+   SCORING
+========================= */
+
+function registerHit(point){
+
+    const local=point.clone();
+
+    board.worldToLocal(local);
+
+    // local x is depth, y/z are board plane
+    const x=local.y;
+    const y=local.z;
+
+    const r=Math.sqrt(x*x+y*y);
+
+    let value=0;
+    let multiplier=1;
+
+    if(r<.16){
+
+        value=50;
+
+    }else if(r<.32){
+
+        value=25;
+
+    }else if(r>1.70 && r<1.93){
+
+        multiplier=2;
+        value=sectorValue(x,y);
+
+    }else if(r>1.00 && r<1.08){
+
+        multiplier=3;
+        value=sectorValue(x,y);
+
+    }else if(r<1.93){
+
+        value=sectorValue(x,y);
+    }
+
+    const points=value*multiplier;
+
+    // bust rule
+    if(points>score || score-points<0){
+
+        showMessage("BUST!","#ff3344");
+
+        lastEl.textContent="BUST";
+
+    }else{
+
+        score-=points;
+
+        lastEl.textContent=
+            multiplier>1
+            ? multiplier+"×"+value
+            : value;
+
+        showMessage(
+            points===50?"BULL!":"-"+points,
+            points===50?"#ffdd55":"#55eaff"
+        );
+    }
+
+    updateHUD();
+
+    dartsLeft--;
+
+    if(dartsLeft<=0){
+
+        setTimeout(endRound,900);
+
+    }else{
+
+        setTimeout(()=>{
+            canThrow=true;
+        },450);
+    }
+}
+
+function sectorValue(x,y){
+
+    let a=Math.atan2(y,x);
+
+    if(a<0)a+=Math.PI*2;
+
+    // rotate so 20 is top
+    a+=Math.PI/2;
+
+    if(a>=Math.PI*2)a-=Math.PI*2;
+
+    const index=Math.floor(
+        a/(Math.PI*2/20)
+    );
+
+    const nums=[
+        20,1,18,4,13,6,10,15,2,17,
+        3,19,7,16,8,11,14,9,12,5
+    ];
+
+    return nums[index];
+}
+
+
+/* =========================
+   ROUND
+========================= */
+
+function endRound(){
+
+    round++;
+
+    dartsLeft=3;
+
+    roundEl.textContent=round;
+    dartsEl.textContent=3;
+
+    if(score===0){
+
+        showMessage("WINNER!","#66ffcc");
+
+        setTimeout(resetGame,2500);
+
+    }else{
+
+        setTimeout(()=>{
+            canThrow=true;
+        },700);
+    }
+}
+
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD(){
+
+    scoreEl.textContent=score;
+    bigScore.textContent=score;
+    dartsEl.textContent=dartsLeft;
+
+    updatePower();
+}
+
+function updatePower(){
+
+    powerFill.style.width=(power*100)+"%";
+    powerNum.textContent=Math.round(power*100)+"%";
+}
+
+function showMessage(text,color){
+
+    message.textContent=text;
+    message.style.color=color;
+    message.style.opacity=1;
+    message.style.transform=
+        "translate(-50%,-50%) scale(1)";
+
+    setTimeout(()=>{
+        message.style.opacity=0;
+        message.style.transform=
+            "translate(-50%,-50%) scale(.8)";
+    },650);
+}
+
+
+/* =========================
+   MOUSE AIM
+========================= */
+
+function mouseMove(e){
+
+    mouseX=(e.clientX/innerWidth)*2-1;
+    mouseY=-(e.clientY/innerHeight)*2+1;
+
+    if(!gameStarted)return;
+
+    const target=new THREE.Vector3(
+        mouseX*1.7,
+        3+mouseY*1.7,
+        -1.48
+    );
+
+    aim.position.lerp(target,.16);
+}
+
+
+/* =========================
+   START
+========================= */
+
+function startGame(){
+
+    document.getElementById("start").style.display="none";
+
+    gameStarted=true;
+    canThrow=true;
+
+    score=501;
+    round=1;
+    dartsLeft=3;
+
+    updateHUD();
+
+    // camera intro
+    camera.position.set(0,2.2,11);
+
+    let intro=0;
+
+    function cameraIntro(){
+
+        intro+=.015;
+
+        camera.position.z=
+            11-(Math.min(intro,1)*2);
+
+        camera.lookAt(0,2.7,-1);
+
+        if(intro<1)
+            requestAnimationFrame(cameraIntro);
+    }
+
+    cameraIntro();
+}
+
+function resetGame(){
+
+    score=501;
+    round=1;
+    dartsLeft=3;
+
+    darts.forEach(d=>{
+        scene.remove(d);
+    });
+
+    darts=[];
+
+    updateHUD();
+
+    canThrow=true;
+}
+
+
+/* =========================
+   DART RACK
+========================= */
+
+function createDartRack(){
+
+    for(let i=0;i<5;i++){
+
+        const d=makeDart();
+
+        d.position.set(
+            -4.2,
+            1.3+i*.55,
+            -.8
+        );
+
+        d.rotation.z=Math.PI/2;
+
+        scene.add(d);
+    }
+}
+
+
+/* =========================
+   ANIMATION
+========================= */
+
+let time=0;
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    time+=.01;
+
+    // floating aim
+    if(gameStarted){
+
+        aim.rotation.z+=.01;
+
+        const s=1+Math.sin(time*5)*.08;
+
+        aim.scale.set(s,s,s);
+    }
+
+    // subtle camera breathing
+    if(gameStarted){
+
+        camera.position.x=
+            Math.sin(time*.5)*.025;
+
+        camera.position.y=
+            2.2+Math.sin(time*.7)*.015;
+
+        camera.lookAt(
+            aim.position.x*.15,
+            2.7+aim.position.y*.03,
+            -1
+        );
+    }
+
+    renderer.render(scene,camera);
+}
+
+
+/* =========================
+   RESIZE
+========================= */
+
+function resize(){
+
+    camera.aspect=innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+}
+</script>
+
+</body>
+</html>
